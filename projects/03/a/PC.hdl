@@ -17,4 +17,19 @@ CHIP PC {
 
     PARTS:
     // Put your code here:
+
+    // Handle for load bit
+    Mux16(a = regOut, b = in, sel = load, out = MuxLoadOut);
+    Mux16(a = MuxLoadOut, b = false, sel = reset, out = MuxRLOut);
+
+    // Handle for increment
+    Inc16(in = regOut, out = incOut);
+    Mux16(a = in, b = incOut, sel = inc, out = MuxIncOut);
+    Mux16(a = MuxIncOut, b = false, sel = reset, out = MuxRIOut);
+
+    // Handle for reset
+    Mux16(a = MuxRIOut, b = MuxRLOut, sel = load, out = muxOut);
+    
+    // Finally update the register accordingly
+    Register(in = muxOut, load = true, out = out, out = regOut);
 }
