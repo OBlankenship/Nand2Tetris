@@ -12,3 +12,79 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 // Put your code here.
+
+// Assign keyboard array to keyaddress
+@KBD
+D=A
+@keyaddress
+M=D
+
+// Check for key press
+(PRESS)
+    @KBD
+    D=M
+    @PRESS
+    D;JEQ
+
+
+// Assign screen array to screenaddress
+@SCREEN
+D=A
+@screenaddress
+M=D
+
+// Loop through entirety of screen array - darken all pixels
+(PRESSED)
+    @keyaddress
+    D=M
+    @screenaddress
+    D=D-M
+    @RELEASE
+    D;JEQ
+    // Set the current screen register to all 1's
+    @screenaddress
+    A=M
+    M=-1
+    // Move to next screen address
+    @screenaddress
+    M=M+1
+    @PRESSED
+    0;JEQ
+
+
+// Check for key release
+(RELEASE)
+    @KBD
+    D=M
+    @RELEASE
+    D;JNE
+
+// Assign screen array to screenaddress
+@SCREEN
+D=A
+@screenaddress
+M=D
+
+// Loop through entirety of screen array - lighten all pixels
+(LIGHTEN)
+    @keyaddress
+    D=M
+    @screenaddress
+    D=D-M
+    @PRESS
+    D;JEQ
+
+    // Set the current screen register to all 1's
+    @screenaddress
+    A=M
+    M=0
+
+    // Move to next screen address
+    @screenaddress
+    M=M+1
+
+    @LIGHTEN
+    0;JEQ
+
+
+
