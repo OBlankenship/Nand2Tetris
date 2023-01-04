@@ -40,20 +40,26 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
-    Mux16(a = instruction, b = ALUout, sel = instruction[15], out = MuxAOut);  // Select between D and A
 
+    // Select between D and A
+    Mux16(a = instruction, b = ALUout, sel = instruction[15], out = MuxAOut);
+
+    // Handle loading of A register - A instructions or C instructions with correct bit
     Not(in = instruction[15], out = notA);
     Or(a = instruction[5], b = notA, out = loadA);
     ARegister(in = MuxAOut, load = loadA, out = AOut, out[0..14] = addressM);
 
+    // Select between A and M
     And(a = instruction[15], b = instruction[12], out = ALUInputSel);
-    Mux16(a = AOut, b = inM, sel = ALUInputSel, out = ALUInput1);  // Select between A and M
+    Mux16(a = AOut, b = inM, sel = ALUInputSel, out = ALUInput1);
 
+    // Handle loading of D register - Only C instructions with correct bit
     And(a = instruction[4], b = instruction[15], out = DLoad);
     DRegister(in = ALUout, load = DLoad, out = ALUInput2);
 
     ALU(x = ALUInput2, y = ALUInput1, zx = instruction[11], nx = instruction[10], zy = instruction[9], ny = instruction[8], f = instruction[7], no = instruction[6], out = outM, out = ALUout, zr = zr, ng = ng);
 
+    // Handle writing to writeM - Only C instructions with correct bit
     And(a = instruction[3], b = instruction[15], out = writeM);
 
     // PC Logic
@@ -73,6 +79,7 @@ CHIP CPU {
     And(a = J12, b = ZeroOrNeg, out = JLE);
     And(a = J01, b = instruction[2], out = JMP);
 
+    // Only load PC if a JMP condition is valid
     Or(a = JGT, b = JEQ, out = load1);
     Or(a = JGE, b = JLT, out = load2);
     Or(a = JNE, b = JLE, out = load3);
@@ -80,6 +87,7 @@ CHIP CPU {
     Or(a = load3, b = JMP, out = L34);
     Or(a = L12, b = L34, out = loadOut);
 
+    // Only load for C instructions
     And(a = loadOut, b = instruction[15], out = finalLoad);
 
     PC(in = AOut, load = finalLoad, inc = true, reset = reset, out[0..14] = pc);
