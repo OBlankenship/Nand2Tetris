@@ -40,4 +40,47 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    Mux16(a = instruction, b = ALUout, sel = instruction[15], out = MuxAOut);  // Select between D and A
+
+    Not(in = instruction[15], out = notA);
+    Or(a = instruction[5], b = notA, out = loadA);
+    ARegister(in = MuxAOut, load = loadA, out = AOut, out[0..14] = addressM);
+
+    And(a = instruction[15], b = instruction[12], out = ALUInputSel);
+    Mux16(a = AOut, b = inM, sel = ALUInputSel, out = ALUInput1);  // Select between A and M
+
+    And(a = instruction[4], b = instruction[15], out = DLoad);
+    DRegister(in = ALUout, load = DLoad, out = ALUInput2);
+
+    ALU(x = ALUInput2, y = ALUInput1, zx = instruction[11], nx = instruction[10], zy = instruction[9], ny = instruction[8], f = instruction[7], no = instruction[6], out = outM, out = ALUout, zr = zr, ng = ng);
+
+    And(a = instruction[3], b = instruction[15], out = writeM);
+
+    // PC Logic
+    Not(in = zr, out = notZero);
+    Not(in = ng, out = positive);
+    Or(a = ng, b = zr, out = ZeroOrNeg);
+    And(a = positive, b = notZero, out = NotZeroAndPos);
+
+    And(a = instruction[0], b = NotZeroAndPos, out = JGT);
+    And(a = instruction[1], b = zr, out = JEQ);
+    And(a = instruction[0], b = instruction[1], out = J01);
+    And(a = J01, b = positive, out = JGE);
+    And(a = instruction[2], b = ng, out = JLT);
+    And(a = instruction[2], b = instruction[0], out = J02);
+    And(a = J02, b = notZero, out = JNE);
+    And(a = instruction[1], b = instruction[2], out = J12);
+    And(a = J12, b = ZeroOrNeg, out = JLE);
+    And(a = J01, b = instruction[2], out = JMP);
+
+    Or(a = JGT, b = JEQ, out = load1);
+    Or(a = JGE, b = JLT, out = load2);
+    Or(a = JNE, b = JLE, out = load3);
+    Or(a = load1, b = load2, out = L12);
+    Or(a = load3, b = JMP, out = L34);
+    Or(a = L12, b = L34, out = loadOut);
+
+    And(a = loadOut, b = instruction[15], out = finalLoad);
+
+    PC(in = AOut, load = finalLoad, inc = true, reset = reset, out[0..14] = pc);
 }
